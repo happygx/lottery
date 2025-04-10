@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>html5手机移动端大转盘抽奖代码</title>
+
+    <script src="./js/flexible.js"></script>
+    <link href="css/style.css" rel="stylesheet" type="text/css" />
+    <!-- SweetAlert2 CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
+  </head>
+  <body style="background: #e62d2d; overflow-x: hidden">
+    <!-- 粒子背景 -->
+    <canvas class="particles"></canvas>
+
+    <!-- 转盘抽奖 -->
+    <div class="banner" style="padding-top: 6vh">
+      <h3 class="title">刘云专属</h3>
+      <div
+        class="turnplate"
+        style="
+          background-image: url(images/prizeDraw-bg.png);
+          background-size: 100% 100%;
+        "
+      >
+        <canvas
+          class="item"
+          id="wheelCanvas"
+          width="422px"
+          height="422px"
+        ></canvas>
+        <img
+          class="pointer"
+          src="images/prizeDraw-pointer.png"
+          style="cursor: pointer"
+        />
+      </div>
+    </div>
+  </body>
+  <script
+    type="text/javascript"
+    src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"
+  ></script>
+  <!-- SweetAlert2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script type="text/javascript" src="js/awardRotate.js"></script>
+
+  <script type="text/javascript">
+    const prizeDraw = {
+      //大转盘奖品名称
+      prizes: ["一等奖", "二等奖", "三等奖", "幸运奖", "特别奖", "参与奖"],
+      prizesMap: [
+        "一等奖：畅享旅游",
+        "二等奖：新衣服一身",
+        "三等奖：化妆品一套",
+        "幸运奖：5200元现金",
+        "特别奖：满足一个愿望",
+        "参与奖：1314元红包",
+      ],
+      //大转盘奖品区块对应背景颜色
+      colors: [
+        "#FFF4D6",
+        "#FFFFFF",
+        "#FFF4D6",
+        "#FFFFFF",
+        "#FFF4D6",
+        "#FFFFFF",
+      ],
+      outsideRadius: 192, //大转盘外圆的半径
+      textRadius: 150, //大转盘奖品位置距离圆心的距离
+      insideRadius: 68, //大转盘内圆的半径
+      startAngle: 0, //开始角度
+      bRotate: false, //false:停止;ture:旋转
+    };
+
+    $(document).ready(function () {
+      //旋转转盘 index:奖品位置
+      const rotateFn = function (index) {
+        console.log("index: ", index);
+        let angles =
+          index * (360 / prizeDraw.prizes.length) -
+          360 / (prizeDraw.prizes.length * 2);
+        if (angles < 270) {
+          angles = 270 - angles;
+        } else {
+          angles = 360 - angles + 270;
+        }
+        $("#wheelCanvas").stopRotate();
+        $("#wheelCanvas").rotate({
+          angle: 0,
+          animateTo: angles + 1800,
+          duration: 5000,
+          callback: function () {
+            Swal.fire({
+              title: "抽奖结果",
+              text: prizeDraw.prizesMap[index - 1],
+              showConfirmButton: false,
+              showCancelButton: false,
+              customClass: {
+                title: "swal-title-mobile",
+                htmlContainer: "swal-text-mobile",
+              },
+            });
+
+            prizeDraw.bRotate = !prizeDraw.bRotate;
+          },
+        });
+      };
+
+      $(".pointer").click(function () {
+        if (prizeDraw.bRotate) return;
+        prizeDraw.bRotate = !prizeDraw.bRotate;
+        //获取随机数(奖品个数范围内)
+        const item = rnd(1, prizeDraw.prizes.length);
+        //奖品数量等于10,指针落在对应奖品区域的中心角度[252, 216, 180, 144, 108, 72, 36, 360, 324, 288]
+        rotateFn(item);
+      });
+    });
+
+    //控制中奖结果
+    function rnd(n, m) {
+      return (random = Math.floor(Math.random() * (m - n + 1) + n));
+    }
+
+    //页面所有元素加载完毕后执行drawRouletteWheel()方法对转盘进行渲染
+    window.onload = function () {
+      drawRouletteWheel();
+      initParticles();
+    };
+
+    function drawRouletteWheel() {
+      const canvas = document.getElementById("wheelCanvas");
+      if (canvas.getContext) {
+        //根据奖品个数计算圆周角度
+        const arc = Math.PI / (prizeDraw.prizes.length / 2);
+        const ctx = canvas.getContext("2d");
+        //在给定矩形内清空一个矩形
+        ctx.clearRect(0, 0, 422, 422);
+        //strokeStyle 属性设置或返回用于笔触的颜色、渐变或模式
+        ctx.strokeStyle = "#FFBE04";
+        //font 属性设置或返回画布上文本内容的当前字体属性
+        ctx.font = "18px Microsoft YaHei";
+
+        for (let i = 0; i < prizeDraw.prizes.length; i++) {
+          const angle = prizeDraw.startAngle + i * arc;
+          ctx.fillStyle = prizeDraw.colors[i];
+          ctx.beginPath();
+          //arc(x,y,r,起始角,结束角,绘制方向) 方法创建弧/曲线（用于创建圆或部分圆）
+          ctx.arc(211, 211, prizeDraw.outsideRadius, angle, angle + arc, false);
+          ctx.arc(211, 211, prizeDraw.insideRadius, angle + arc, angle, true);
+          ctx.stroke();
+          ctx.fill();
+          //锁画布(为了保存之前的画布状态)
+          ctx.save();
+
+          //----绘制奖品开始----
+          ctx.fillStyle = "#E5302F";
+          const text = prizeDraw.prizes[i];
+          const line_height = 17;
+          //translate方法重新映射画布上的 (0,0) 位置
+          ctx.translate(
+            211 + Math.cos(angle + arc / 2) * prizeDraw.textRadius,
+            211 + Math.sin(angle + arc / 2) * prizeDraw.textRadius
+          );
+
+          //rotate方法旋转当前的绘图
+          ctx.rotate(angle + arc / 2 + Math.PI / 2);
+
+          if (text.length > 6) {
+            //奖品名称长度超过一定范围
+            text = text.substring(0, 6) + "||" + text.substring(6);
+            var texts = text.split("||");
+            for (var j = 0; j < texts.length; j++) {
+              ctx.fillText(
+                texts[j],
+                -ctx.measureText(texts[j]).width / 2,
+                j * line_height
+              );
+            }
+          } else {
+            //在画布上绘制填色的文本。文本的默认颜色是黑色
+            //measureText()方法返回包含一个对象，该对象包含以像素计的指定字体宽度
+            ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+          }
+
+          //把当前画布返回（调整）到上一个save()状态之前
+          ctx.restore();
+          //----绘制奖品结束----
+        }
+      }
+    }
+
+    // 初始化粒子背景
+    function initParticles() {
+      const canvas = document.querySelector(".particles");
+      const ctx = canvas.getContext("2d");
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      const particles = [];
+      class Particle {
+        constructor() {
+          this.reset();
+        }
+
+        reset() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.speed = Math.random() * 1 + 0.2;
+          this.size = Math.random() * 6 + 2;
+          this.alpha = Math.random() * 0.5 + 0.1;
+        }
+
+        update() {
+          this.y += this.speed;
+          if (this.y > canvas.height) this.reset();
+        }
+
+        draw() {
+          ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 创建粒子
+      for (let i = 0; i < 150; i++) {
+        particles.push(new Particle());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p) => {
+          p.update();
+          p.draw();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+  </script>
+</html>
