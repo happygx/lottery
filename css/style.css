@@ -86,14 +86,12 @@ a:hover {
 .title {
   margin-bottom: .8rem;
   transition: all 0.5s;
-  -webkit-text-stroke: 4px #d6f4f4;
+  -webkit-text-stroke: .02rem #d6f4f4;
   font-variation-settings: "wght" 900, "ital" 1;
   font-size: .6rem;
   text-align: center;
   color: transparent;
   font-family: "Meta", sans-serif;
-  text-shadow: 10px 10px 0px #07bccc, 15px 15px 0px #e8f9ff,
-    20px 20px 0px #c4d9ff, 25px 25px 0px #c5baff;
   letter-spacing: 15px;
   cursor: pointer;
 }
